@@ -36,6 +36,82 @@ entity VGA_aansturing_tb is
 end VGA_aansturing_tb;
 
 architecture Behavioral of VGA_aansturing_tb is
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+<<<<<<< HEAD
+
+    component VGA_aansturing is
+    Port (
+        clk: in std_logic;
+        Red, Green, Blue: in std_logic_vector(3 downto 0);
+        Hsync, Vsync, video_ON: out std_logic;
+        vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
+    );
+    end component;
+
+    signal clk: std_logic;
+    signal Red, Green, Blue: std_logic_vector(3 downto 0);
+    signal Hsync, Vsync, video_ON: std_logic;
+    signal vgaRed, vgaGreen, vgaBlue: std_logic_vector(3 downto 0);
+    
+    signal verify : boolean:= true; 
+
+begin
+
+clk_gen: process
+begin
+    clk <= '0';
+    wait for 1 ns;
+    clk <= '1';
+    wait for 1 ns;
+end process;
+
+tb: process
+begin
+    Red <= "0000"; Green <= "0000"; Blue <= "0000";    --Zwart
+    wait for 1 ms;
+
+    Red <= "1111"; Green <= "0000"; Blue <= "0000";    --Rood
+    wait for 1 ms;
+    
+    Red <= "1111"; Green <= "1111"; Blue <= "0000";    --Geel
+    wait for 1 ms;
+
+    Red <= "0000"; Green <= "1111"; Blue <= "0000";    --Groen
+    wait for 1 ms;
+    
+    Red <= "0000"; Green <= "1111"; Blue <= "1111";    --Cyaan
+    wait for 1 ms; 
+    
+    Red <= "0000"; Green <= "0000"; Blue <= "1111";    --Blauw
+    wait for 1 ms;
+    
+    Red <= "1111"; Green <= "0000"; Blue <= "1111";    --Magenta
+    wait for 1 ms;
+    
+    Red <= "1111"; Green <= "1111"; Blue <= "1111";    --Wit
+    wait for 1 ms;
+    
+    wait;                                               --Einde van de simulatie
+end process;
+
+validation: process
+begin
+wait until rising_edge(clk);
+if video_ON = '1' then
+    verify <= true when 
+        (vgaRed = Red) 
+        and (vgaGreen = Green) 
+        and (vgaBlue = Blue) 
+    else false;
+end if;
+
+end process;
+=======
+=======
+>>>>>>> 7916770c9eed9427310d2b17488808a29c9f9701
+>>>>>>> Stashed changes
 component VGA_aansturing is
 Port (
 clk: in std_logic;
@@ -61,5 +137,12 @@ Hsync => Hsync,
 Vsync => Vsync,
 video_ON => video_ON,
 
+<<<<<<< Updated upstream
+=======
+<<<<<<< HEAD
+>>>>>>> 7916770c9eed9427310d2b17488808a29c9f9701
+=======
+>>>>>>> 7916770c9eed9427310d2b17488808a29c9f9701
+>>>>>>> Stashed changes
 
 end Behavioral;
