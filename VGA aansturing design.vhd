@@ -215,22 +215,119 @@ begin
                     Green <= "0000";
                     Blue <= "0000";
                 end if;
+                
             elsif xTel >= Blok2L and xTel <= Blok2R and yTel >= Blok2D and yTel <= Blok2U then  --VU blok voor frequentie 2
+                if yTel <= LaagLVL and f2 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f2 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f2 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok3L and xTel <= Blok3R and yTel >= Blok3D and yTel <= Blok3U then  --VU blok voor frequentie 3
+                if yTel <= LaagLVL and f3 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f3 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f3 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok4L and xTel <= Blok4R and yTel >= Blok4D and yTel <= Blok4U then  --VU blok voor frequentie 4
+                if yTel <= LaagLVL and f4 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f4 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f4 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok5L and xTel <= Blok5R and yTel >= Blok5D and yTel <= Blok5U then  --VU blok voor frequentie 5
+                if yTel <= LaagLVL and f5 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f5 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f5 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok6L and xTel <= Blok6R and yTel >= Blok6D and yTel <= Blok6U then  --VU blok voor frequentie 6
+                if yTel <= LaagLVL and f6 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f6 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f6 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok7L and xTel <= Blok7R and yTel >= Blok7D and yTel <= Blok7U then  --VU blok voor frequentie 7
+                if yTel <= LaagLVL and f7 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f7 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f7 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
             
             elsif xTel >= Blok8L and xTel <= Blok8R and yTel >= Blok8D and yTel <= Blok8U then  --VU blok voor frequentie 8
+                if yTel <= LaagLVL and f8 = "01" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "0000";
+                elsif yTel <= MediumLVL and f8 = "10" then
+                    Red <= "0000";
+                    Green <= "1111";
+                    Blue <= "1111";
+                elsif yTel <= HighLVL and f8 = "11" then
+                    Red <= "1111";
+                    Green <= "0000";
+                    Blue <= "0000";
+                end if;
+            else 
+                Red <= "0000";
+                Green <= "0000";
+                Blue <= "0000";
+            end if;
         end if;
     end if;
-end process RegDecoder:
+end process RegDecoder;
 
 end Behavioral;
 
