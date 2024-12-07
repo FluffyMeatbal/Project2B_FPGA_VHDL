@@ -24,11 +24,17 @@
 -- Horizontale lijnen
 -- Er worden 3 lijnen afgebeeld
 ----------------------------------------------------------------------------------
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
 
+package VGA_Types is                                    --array voor input registers
+    type FreqArray is array(1 to 8) of std_logic_vector(1 downto 0);
+end package VGA_Types;
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.Numeric_STD.ALL;
+use work.VGA_Types.all;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -42,7 +48,7 @@ use IEEE.Numeric_STD.ALL;
 entity VGA_aansturing is
 Port (
 clk: in std_logic;
-f1, f2, f3, f4, f5, f6, f7, f8: in std_logic_vector(1 downto 0);
+f: in FreqArray;
 Hsync, Vsync, video_ON: out std_logic;
 vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
 );
@@ -61,20 +67,42 @@ signal vid_ON : std_logic;
 
 signal Red, Green, Blue: std_logic_vector(3 downto 0);
 
+type BlokLimiet is record
+    L: integer;
+    R: integer;
+end record;
+
+type BlokArray is array(1 to 8) of BlokLimiet;
+
+constant BlokGrens: BlokArray := (                          --Array met randwaarden van de blokjes
+(L => 0, R => 480/8),                                       --Blok 1
+(L => 480/8+1, R => 480/8*2),                               --Blok 2
+(L => 480/8*2+1, R => 480/8*3),                             --Blok 3
+(L => 480/8*3+1, R => 480/8*4),                             --Blok 4
+(L => 480/8*4+1, R => 480/8*5),                             --Blok 5
+(L => 480/8*5+1, R => 480/8*6),                             --Blok 6
+(L => 480/8*6+1, R => 480/8*7),                             --Blok 7
+(L => 480/8*7+1, R => 480)                                  --Blok 8
+);
+constant BlockBottom:   integer := 0;                       --onderkant blokjes
+constant LaagLVL:       integer := 0;                       --laag niveau blokjes
+constant MediumLVL:     integer := 0;                       --medium niveau blokjes
+constant HighLVL:       integer := 0;                       --hoog niveau blokjes
+
 begin
 
 delerBlok: process(clk)
-variable deler : integer range 0 to 511 := 1;          --variabele voor de deler
+variable deler : integer range 0 to 511 := 1;               --variabele voor de deler
 
 begin
     if rising_edge(clk) then
-        if deler = prscl / 4 then                   --25% van periode voorbij 
+        if deler = prscl / 4 then                           --25% van periode voorbij 
             enable <= '1';
         else
             enable <= '0';
         end if;
         
-        if deler = prscl then                           --100% van periode voorbij 
+        if deler = prscl then                               --100% van periode voorbij 
             deler := 1;
         else
             deler := deler + 1;
@@ -87,9 +115,9 @@ begin
     if rising_edge(clk) then
         if enable = '1' then
             if xTel < 799 then
-                xTel <= xTel + 1;                       --verhoog xTel
+                xTel <= xTel + 1;                           --verhoog xTel
             else
-                xTel <= 0;                              --xTel gaat terug naar het begin
+                xTel <= 0;                                  --xTel gaat terug naar het begin
             end if;
         end if;
     end if;
@@ -99,7 +127,7 @@ Y_Teller: process(clk, enable, yTel)
 begin
     if rising_edge(clk) then
         if enable = '1' then
-            if xTel = 799 then                          --xTel is aan het eind
+            if xTel = 799 then                              --xTel is aan het eind
                 if yTel < 524 then
                     yTel <= yTel + 1;
                 else 
@@ -112,7 +140,7 @@ end process Y_teller;
 
 HORsync: process(xTel)
 begin
-    if xTel > 655 and xTel < 752 then           --Horizontale puls 96 lijnen breed
+    if xTel > 655 and xTel < 752 then                       --Horizontale puls 96 lijnen breed
         H_sync <= '0';
     elsif xTel < 640 then
         H_sync <= '1';
@@ -123,7 +151,7 @@ end process HORsync;
 
 VERTsync: process(yTel)
 begin
-    if yTel > 489 and yTel < 492 then           --Verticale puls 2 lijnen breed
+    if yTel > 489 and yTel < 492 then                       --Verticale puls 2 lijnen breed
         V_sync <= '0';
     elsif yTel < 480 then
         V_sync <= '1';
@@ -162,226 +190,42 @@ Hsync <= H_sync;
 Vsync <= V_sync;
 video_ON <= vid_ON;
 
-RegDecoder: process(clk, enable, xTel, yTel, f1, f2, f3, f4, f5, f6, f7, f8)
-constant Blok1L:        integer := 0;      --blok 1 meest linkse punt
-constant Blok1R:        integer := 0;      --blok 1 meest rechtse punt
-constant Blok2L:        integer := 0;      --blok 2 meest linkse punt
-constant Blok2R:        integer := 0;      --blok 2 meest rechtse punt
-constant Blok3L:        integer := 0;      --blok 3 meest linkse punt
-constant Blok3R:        integer := 0;      --blok 3 meest rechtse punt
-constant Blok4L:        integer := 0;      --blok 4 meest linkse punt
-constant Blok4R:        integer := 0;      --blok 4 meest rechtse punt
-constant Blok5L:        integer := 0;      --blok 5 meest linkse punt
-constant Blok5R:        integer := 0;      --blok 5 meest rechtse punt
-constant Blok6L:        integer := 0;      --blok 6 meest linkse punt
-constant Blok6R:        integer := 0;      --blok 6 meest rechtse punt
-constant Blok7L:        integer := 0;      --blok 7 meest linkse punt
-constant Blok7R:        integer := 0;      --blok 7 meest rechtse punt
-constant Blok8L:        integer := 0;      --blok 8 meest linkse punt
-constant Blok8R:        integer := 0;      --blok 8 meest rechtse punt
-constant BlockBottom:   integer := 0;      --onderkant blokjes
-constant LaagLVL:       integer := 0;
-constant MediumLVL:     integer := 0;
-constant HighLVL:       integer := 0;
+RegDecoder: process(clk, enable, xTel, yTel,f)
+
 begin
     if rising_edge(clk) then
         if enable = '1' then
-            if xTel >= Blok1L and xTel <= Blok1R and yTel >= BlockBottom then     --VU blok voor frequentie 1
-                if unsigned(f1) > 0 then                    --vergelijk numerieke waarde van register f1
-                    if yTel <= LaagLVL then                 --onderste deel van het blokje
-                        Red <= "0000";                      --kleur = Groen
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f1) > 1 then
-                        if yTel <= MediumLVL then           --middelste deel van het blokje
-                            Red <= "0000";                  --kleur = Geel
+            for i in 1 to 8 loop                            --doorloop routine voor elke frequentie
+                if xTel >= BlokGrens(i).L and xTel <= BlokGrens(i).R and yTel >= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
+                    if unsigned(f(i)) > 0 then
+                        if yTel <= LaagLVL then             --vergelijk y teller met onderste niveau
+                            Red <= "0000";                  --kleur = Groen
                             Green <= "1111";
-                            Blue <= "1111";
+                            Blue <= "0000";
                         end if;
                         
-                        if unsigned(f1) > 2 then
-                            if yTel <= HighLVL then         --hoogste deel van het blokje
-                                Red <= "1111";              --kleur = Rood
-                                Green <= "0000";
+                        if unsigned(f(i)) > 1 then
+                            if yTel <= MediumLVL then       --vergelijk y teller met middelste niveu
+                                Red <= "1111";              --kleur = Geel
+                                Green <= "1111";
                                 Blue <= "0000";
                             end if;
-                    end if;
-                end if;
-                
-            elsif xTel >= Blok2L and xTel <= Blok2R and yTel >= BlockBottom then  --VU blok voor frequentie 2
-                if unsigned(f2) > 0 then                    --vergelijk numerieke waarde van register f2
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f2) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
+                            
+                            if unsigned(f(i)) > 2 then
+                                if yTel <= HighLVL then     --vergelijk y teller met hoogste niveau
+                                    Red <= "1111";          --kleur = Rood
+                                    Green <= "0000";
+                                    Blue <= "0000";
+                                end if;
+                            end if;
                         end if;
-                        
-                        if unsigned(f2) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
                     end if;
+                else                                        --als de x teller niet in het blokje is dan worden de RGB signalen gelijk aan de achtergrond kleur
+                    Red <= "0000";                          --achtergrond kleur = Zwart
+                    Green <= "0000";
+                    Blue <= "0000";
                 end if;
-            
-            elsif xTel >= Blok3L and xTel <= Blok3R and yTel >= BlockBottom then  --VU blok voor frequentie 3
-                if unsigned(f3) > 0 then                    --vergelijk numerieke waarde van register f3
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f3) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f3) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            
-            elsif xTel >= Blok4L and xTel <= Blok4R and yTel >= BlockBottom then  --VU blok voor frequentie 4
-                if unsigned(f4) > 0 then                    --vergelijk numerieke waarde van register f4
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f4) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f4) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            
-            elsif xTel >= Blok5L and xTel <= Blok5R and yTel >= BlockBottom then  --VU blok voor frequentie 5
-                if unsigned(f5) > 0 then                    --vergelijk numerieke waarde van register f5
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f5) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f5) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            
-            elsif xTel >= Blok6L and xTel <= Blok6R and yTel >= BlockBottom then  --VU blok voor frequentie 6
-                if unsigned(f6) > 0 then                    --vergelijk numerieke waarde van register f6
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f6) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f6) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            
-            elsif xTel >= Blok7L and xTel <= Blok7R and yTel >= BlockBottom then  --VU blok voor frequentie 7
-                if unsigned(f7) > 0 then                    --vergelijk numerieke waarde van register f7
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f7) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f7) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            
-            elsif xTel >= Blok8L and xTel <= Blok8R and yTel >= BlockBottom then  --VU blok voor frequentie 8
-                if unsigned(f8) > 0 then                    --vergelijk numerieke waarde van register f8
-                    if yTel <= LaagLVL then
-                        Red <= "0000";
-                        Green <= "1111";
-                        Blue <= "0000";
-                    end if;
-                    
-                    if unsigned(f8) > 1 then
-                        if yTel <= MediumLVL then
-                            Red <= "0000";
-                            Green <= "1111";
-                            Blue <= "1111";
-                        end if;
-                        
-                        if unsigned(f8) > 2 then
-                            if yTel <= HighLVL then
-                                Red <= "1111";
-                                Green <= "0000";
-                                Blue <= "0000";
-                            end if;
-                    end if;
-                end if;
-            else 
-                Red <= "0000";
-                Green <= "0000";
-                Blue <= "0000";
-            end if;
+            end loop;
         end if;
     end if;
 end process RegDecoder;
