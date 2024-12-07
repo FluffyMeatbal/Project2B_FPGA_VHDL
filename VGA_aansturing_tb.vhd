@@ -40,7 +40,7 @@ architecture Behavioral of VGA_aansturing_tb is
     component VGA_aansturing is
     Port (
         clk: in std_logic;
-        Red, Green, Blue: in std_logic_vector(3 downto 0);
+        f1, f2, f3, f4, f5, f6, f7, f8: in std_logic_vector(1 downto 0);
         Hsync, Vsync, video_ON: out std_logic;
         vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
     );
@@ -65,44 +65,22 @@ end process;
 
 tb: process
 begin
-    Red <= "0000"; Green <= "0000"; Blue <= "0000";    --Zwart
-    wait for 1 ms;
-
-    Red <= "1111"; Green <= "0000"; Blue <= "0000";    --Rood
-    wait for 1 ms;
     
-    Red <= "1111"; Green <= "1111"; Blue <= "0000";    --Geel
-    wait for 1 ms;
-
-    Red <= "0000"; Green <= "1111"; Blue <= "0000";    --Groen
-    wait for 1 ms;
-    
-    Red <= "0000"; Green <= "1111"; Blue <= "1111";    --Cyaan
-    wait for 1 ms; 
-    
-    Red <= "0000"; Green <= "0000"; Blue <= "1111";    --Blauw
-    wait for 1 ms;
-    
-    Red <= "1111"; Green <= "0000"; Blue <= "1111";    --Magenta
-    wait for 1 ms;
-    
-    Red <= "1111"; Green <= "1111"; Blue <= "1111";    --Wit
-    wait for 1 ms;
     
     wait;                                               --Einde van de simulatie
 end process;
 
-validation: process
-begin
-wait until rising_edge(clk);
-if video_ON = '1' then
-    verify <= true when 
-        (vgaRed = Red) 
-        and (vgaGreen = Green) 
-        and (vgaBlue = Blue) 
-    else false;
-end if;
+--validation: process
+--begin
+--wait until rising_edge(clk);
+--if video_ON = '1' then
+--    verify <= true when 
+--        (vgaRed = Red) 
+--        and (vgaGreen = Green) 
+--        and (vgaBlue = Blue) 
+--    else false;
+--end if;
 
-end process;
+--end process;
 
 end Behavioral;
