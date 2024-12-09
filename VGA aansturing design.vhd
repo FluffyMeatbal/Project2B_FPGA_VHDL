@@ -16,13 +16,6 @@
 -- Revision 0.01 - File Created
 -- Additional Comments:
 -- 
--- Eisen:
--- Lijnkleur is rood
--- Achtergrond is geel
--- Breedte van de lijn is 4 pixels
--- De afstand tussen de lijnen is 16 pixels
--- Horizontale lijnen
--- Er worden 3 lijnen afgebeeld
 ----------------------------------------------------------------------------------
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -35,15 +28,6 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.Numeric_STD.ALL;
 use work.VGA_Types.all;
-
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
-
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
 
 entity VGA_aansturing is
 Port (
