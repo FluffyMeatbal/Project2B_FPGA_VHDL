@@ -21,7 +21,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 package VGA_Types is                                    --array voor input registers
-    type FreqArray is array(1 to 8) of std_logic_vector(1 downto 0);
+    type FreqArray is array(8 downto 1) of std_logic_vector(1 downto 0);
 end package VGA_Types;
 
 library IEEE;
@@ -59,18 +59,18 @@ end record;
 type BlokArray is array(1 to 8) of BlokLimiet;
 
 constant BlokGrens: BlokArray := (                          --Array met randwaarden van de blokjes
-(L => 0, R => 480/8),                                       --Blok 1
-(L => 480/8+1, R => 480/8*2),                               --Blok 2
-(L => 480/8*2+1, R => 480/8*3),                             --Blok 3
-(L => 480/8*3+1, R => 480/8*4),                             --Blok 4
-(L => 480/8*4+1, R => 480/8*5),                             --Blok 5
-(L => 480/8*5+1, R => 480/8*6),                             --Blok 6
-(L => 480/8*6+1, R => 480/8*7),                             --Blok 7
-(L => 480/8*7+1, R => 480)                                  --Blok 8
+(L => 0, R => 640/8),                                       --Blok 1
+(L => 640/8+1, R => 640/8*2),                               --Blok 2
+(L => 640/8*2+1, R => 640/8*3),                             --Blok 3
+(L => 640/8*3+1, R => 640/8*4),                             --Blok 4
+(L => 640/8*4+1, R => 640/8*5),                             --Blok 5
+(L => 640/8*5+1, R => 640/8*6),                             --Blok 6
+(L => 640/8*6+1, R => 640/8*7),                             --Blok 7
+(L => 640/8*7+1, R => 640)                                  --Blok 8
 );
-constant BlockBottom:   integer := 0;                       --onderkant blokjes
-constant LaagLVL:       integer := 0;                       --laag niveau blokjes
-constant MediumLVL:     integer := 0;                       --medium niveau blokjes
+constant BlockBottom:   integer := 600;                     --onderkant blokjes
+constant LaagLVL:       integer := 400;                     --laag niveau blokjes
+constant MediumLVL:     integer := 200;                     --medium niveau blokjes
 constant HighLVL:       integer := 0;                       --hoog niveau blokjes
 
 begin
@@ -175,44 +175,47 @@ Vsync <= V_sync;
 video_ON <= vid_ON;
 
 RegDecoder: process(clk, enable, xTel, yTel,f)
-
+variable tempRed, tempGreen, tempBlue: std_logic_vector(3 downto 0) := (others => '0');
 begin
     if rising_edge(clk) then
         if enable = '1' then
-            for i in 1 to 8 loop                            --doorloop routine voor elke frequentie
-                if xTel >= BlokGrens(i).L and xTel <= BlokGrens(i).R and yTel >= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
-                    if unsigned(f(i)) > 0 then
-                        if yTel <= LaagLVL then             --vergelijk y teller met onderste niveau
-                            Red <= "0000";                  --kleur = Groen
-                            Green <= "1111";
-                            Blue <= "0000";
-                        end if;
-                        
-                        if unsigned(f(i)) > 1 then
-                            if yTel <= MediumLVL then       --vergelijk y teller met middelste niveu
-                                Red <= "1111";              --kleur = Geel
-                                Green <= "1111";
-                                Blue <= "0000";
+            if vid_ON = '1' then
+                tempRed := "0000";                          --achtergrond kleur = Zwart
+                tempGreen := "0000";
+                tempBlue := "0000";
+                for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
+                    if xTel >= BlokGrens(i).L and xTel <= BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
+                        if unsigned(f(i)) > 0 then
+                            if yTel >= LaagLVL then             --vergelijk y teller met onderste niveau
+                                tempRed := "0000";                  --kleur = Groen
+                                tempGreen := "1111";
+                                tempBlue := "0000";
                             end if;
+                        
+                            if unsigned(f(i)) > 1 then
+                                if yTel >= MediumLVL then       --vergelijk y teller met middelste niveu
+                                    tempRed := "1111";              --kleur = Geel
+                                    tempGreen := "1111";
+                                    tempBlue := "0000";
+                                end if;
                             
-                            if unsigned(f(i)) > 2 then
-                                if yTel <= HighLVL then     --vergelijk y teller met hoogste niveau
-                                    Red <= "1111";          --kleur = Rood
-                                    Green <= "0000";
-                                    Blue <= "0000";
+                                if unsigned(f(i)) > 2 then
+                                    if yTel >= HighLVL then     --vergelijk y teller met hoogste niveau
+                                        tempRed := "1111";          --kleur = Rood
+                                        tempGreen := "0000";
+                                        tempBlue := "0000";
+                                    end if;
                                 end if;
                             end if;
                         end if;
                     end if;
-                else                                        --als de x teller niet in het blokje is dan worden de RGB signalen gelijk aan de achtergrond kleur
-                    Red <= "0000";                          --achtergrond kleur = Zwart
-                    Green <= "0000";
-                    Blue <= "0000";
-                end if;
-            end loop;
+                end loop;
+                Red <= tempRed;
+                Green <= tempGreen;
+                Blue <= tempBlue;
+            end if;
         end if;
     end if;
 end process RegDecoder;
 
 end Behavioral;
-

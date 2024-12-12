@@ -21,6 +21,8 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.Numeric_STD.ALL;
+use work.VGA_Types.all;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
@@ -40,20 +42,31 @@ architecture Behavioral of VGA_aansturing_tb is
     component VGA_aansturing is
     Port (
         clk: in std_logic;
-        f1, f2, f3, f4, f5, f6, f7, f8: in std_logic_vector(1 downto 0);
+        f: in FreqArray;
         Hsync, Vsync, video_ON: out std_logic;
         vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
     );
     end component;
 
     signal clk: std_logic;
-    signal Red, Green, Blue: std_logic_vector(3 downto 0);
+    signal f: FreqArray;
     signal Hsync, Vsync, video_ON: std_logic;
     signal vgaRed, vgaGreen, vgaBlue: std_logic_vector(3 downto 0);
     
-    signal verify : boolean:= true; 
+    --signal verify : boolean:= true; 
 
 begin
+
+uut: VGA_aansturing port map(
+    clk => clk,
+    f => f,
+    Hsync => Hsync,
+    Vsync => Vsync,
+    video_ON => video_ON,
+    vgaRed => vgaRed,
+    vgaGreen => vgaGreen,
+    vgaBlue => vgaBlue
+);
 
 clk_gen: process
 begin
@@ -65,7 +78,16 @@ end process;
 
 tb: process
 begin
-    
+    for i in 8 downto 1 loop
+        f(i) <= "00";
+        wait for 2 ms;
+        f(i) <= "01";
+        wait for 2 ms;
+        f(i) <= "10";
+        wait for 2 ms;
+        f(i) <= "11";
+        wait for 2 ms;
+    end loop;
     
     wait;                                               --Einde van de simulatie
 end process;
