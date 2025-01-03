@@ -184,7 +184,7 @@ begin
                 tempGreen := "0000";
                 tempBlue := "0000";
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
-                    if xTel >= BlokGrens(i).L and xTel <= BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
+                    if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
                         if unsigned(f(i)) > 0 then
                             if yTel >= LaagLVL then             --vergelijk y teller met onderste niveau
                                 tempRed := "0000";                  --kleur = Groen
