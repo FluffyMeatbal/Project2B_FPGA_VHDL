@@ -21,7 +21,7 @@ library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 
 package VGA_Types is                                    --array voor input registers
-    type FreqArray is array(8 downto 1) of std_logic_vector(1 downto 0);
+    type FreqArray is array(8 downto 1) of std_logic_vector(7 downto 0);
 end package VGA_Types;
 
 library IEEE;
@@ -185,28 +185,10 @@ begin
                 tempBlue := "0000";
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
                     if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
-                        if unsigned(f(i)) > 0 then
-                            if yTel >= LaagLVL then             --vergelijk y teller met onderste niveau
-                                tempRed := "0000";                  --kleur = Groen
-                                tempGreen := "1111";
-                                tempBlue := "0000";
-                            end if;
-                        
-                            if unsigned(f(i)) > 1 then
-                                if yTel >= MediumLVL then       --vergelijk y teller met middelste niveu
-                                    tempRed := "1111";              --kleur = Geel
-                                    tempGreen := "1111";
-                                    tempBlue := "0000";
-                                end if;
-                            
-                                if unsigned(f(i)) > 2 then
-                                    if yTel >= HighLVL then     --vergelijk y teller met hoogste niveau
-                                        tempRed := "1111";          --kleur = Rood
-                                        tempGreen := "0000";
-                                        tempBlue := "0000";
-                                    end if;
-                                end if;
-                            end if;
+                        if unsigned(f(i)) >= yTel - 95 then
+                            tempRed := "0000";
+                            tempGreen := "1111";
+                            tempBlue := "0000";
                         end if;
                     end if;
                 end loop;
