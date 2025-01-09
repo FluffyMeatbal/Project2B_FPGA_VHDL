@@ -50,6 +50,7 @@ architecture Behavioral of VGA_aansturing_tb is
 
     signal clk: std_logic;
     signal f: FreqArray;
+    signal INC: FreqArray;
     signal Hsync, Vsync, video_ON: std_logic;
     signal vgaRed, vgaGreen, vgaBlue: std_logic_vector(3 downto 0);
     
@@ -79,14 +80,13 @@ end process;
 tb: process
 begin
     for i in 8 downto 1 loop
-        f(i) <= "00";
-        wait for 2 ms;
-        f(i) <= "01";
-        wait for 2 ms;
-        f(i) <= "10";
-        wait for 2 ms;
-        f(i) <= "11";
-        wait for 2 ms;
+        f(i) <= (others => '0');
+        INC(i) <= f(i);
+        for j in 255 downto 1 loop
+            f(i) <= std_logic_vector(unsigned(INC(i)) + 1);
+            INC(i) <= f(i);
+            wait for 64 ns;
+        end loop;
     end loop;
     
     wait;                                               --Einde van de simulatie

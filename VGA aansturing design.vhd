@@ -68,10 +68,7 @@ constant BlokGrens: BlokArray := (                          --Array met randwaar
 (L => 640/8*6+1, R => 640/8*7),                             --Blok 7
 (L => 640/8*7+1, R => 640)                                  --Blok 8
 );
-constant BlockBottom:   integer := 600;                     --onderkant blokjes
-constant LaagLVL:       integer := 400;                     --laag niveau blokjes
-constant MediumLVL:     integer := 200;                     --medium niveau blokjes
-constant HighLVL:       integer := 0;                       --hoog niveau blokjes
+constant BlockBottom:   integer := 350;                     --onderkant blokjes
 
 begin
 
