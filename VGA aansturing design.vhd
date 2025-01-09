@@ -1,164 +1,212 @@
-----------------------------------------------------------------------------------
--- Company: 
--- Engineer: Remco Pieper
--- Studentnummer: 1859875
--- Create Date: 20.11.2024 19:32:54
--- Design Name: 
--- Module Name: VGA aansturing design - Behavioral
--- Project Name: 
--- Target Devices: 
--- Tool Versions: 
--- Description: 
--- 
--- Dependencies: 
--- 
--- Revision:
--- Revision 0.01 - File Created
--- Additional Comments:
--- 
--- Eisen:
--- Lijnkleur is rood
--- Achtergrond is geel
--- Breedte van de lijn is 4 pixels
--- De afstand tussen de lijnen is 16 pixels
--- Horizontale lijnen
--- Er worden 3 lijnen afgebeeld
-----------------------------------------------------------------------------------
-
-
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.Numeric_STD.ALL;
+use IEEE.Numeric_std.all;
 
--- Uncomment the following library declaration if using
--- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+entity andpoort2 is
+    Port ( 
+          klok : in STD_LOGIC;
+          input : in STD_LOGIC;
+          
+          startbyte : out std_logic_vector(7 downto 0);
+          amp1 : out std_logic_vector(7 downto 0);
+          amp2 : out std_logic_vector(7 downto 0);
+          amp3 : out std_logic_vector(7 downto 0);
+          amp4 : out std_logic_vector(7 downto 0);
+          amp5 : out std_logic_vector(7 downto 0);
+          amp6 : out std_logic_vector(7 downto 0);
+          amp7 : out std_logic_vector(7 downto 0);
+          amp8 : out std_logic_vector(7 downto 0)
+         );
+end andpoort2;
 
--- Uncomment the following library declaration if instantiating
--- any Xilinx leaf cells in this code.
---library UNISIM;
---use UNISIM.VComponents.all;
+architecture Behavioral of andpoort2 is
 
-entity VGA_aansturing is
-Port (
-clk: in std_logic;
-Red, Green, Blue: in std_logic_vector(3 downto 0);
-Hsync, Vsync, video_ON: out std_logic;
-vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
-);
-end VGA_aansturing;
-
-architecture Behavioral of VGA_aansturing is
-signal enable: std_logic;                             --gedeelde klok 
-constant prscl : integer := 4;                      --prescaler
-
-signal xTel : integer range 0 to 1023 := 0;
-signal yTel : integer range 0 to 1023 := 0;
-
-signal H_sync : std_logic;
-signal V_sync : std_logic;
-signal vid_ON : std_logic;
-
+    signal klok9600 : std_logic := '0'; --de klok voor het binnenhalen van de bytes
+    signal bitteller: Unsigned(3 downto 0) := (others => '0'); --teller van 0 tot 8 om bits binnen te halen
+    signal byteteller: Unsigned(3 downto 0) := (others => '0');
+    
+    constant klokdeler9600 : integer := 10416;
+    signal klokteller9600 : integer := 0;
+    
+    signal startbyte_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp1_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp2_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp3_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp4_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp5_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp6_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp7_arc : unsigned(7 downto 0) := (others => '0');
+    signal amp8_arc : unsigned(7 downto 0) := (others => '0');
+    
+    signal casenumber : unsigned(3 downto 0) := (others => '0');       
+    
 begin
 
-delerBlok: process(clk)
-variable deler : integer range 0 to 511 := 1;          --variabele voor de deler
-
+process_klokdeler1 : process(klok)
 begin
-    if rising_edge(clk) then
-        if deler = prscl / 4 then                   --25% van periode voorbij 
-            enable <= '1';
+    if rising_edge(klok) then
+        if klokteller9600 = klokdeler9600 / 2 then
+            klokteller9600 <= klokteller9600 + 1; klok9600 <= '1';
         else
-            enable <= '0';
-        end if;
-        
-        if deler = prscl then                           --100% van periode voorbij 
-            deler := 1;
-        else
-            deler := deler + 1;
-        end if;
-    end if;
-end process delerBlok;
-
-X_teller: process(clk, enable, xTel)
-begin
-    if rising_edge(clk) then
-        if enable = '1' then
-            if xTel < 799 then
-                xTel <= xTel + 1;                       --verhoog xTel
+            if klokteller9600 = klokdeler9600 then
+                klok9600 <= '0'; klokteller9600 <= 0;
             else
-                xTel <= 0;                              --xTel gaat terug naar het begin
-            end if;
+                klokteller9600 <= klokteller9600 + 1;
+            end if; 
         end if;
     end if;
-end process X_teller;
-
-Y_Teller: process(clk, enable, yTel)
+end process;
+ 
+tellen : process(klok9600)
 begin
-    if rising_edge(clk) then
-        if enable = '1' then
-            if xTel = 799 then                          --xTel is aan het eind
-                if yTel < 524 then
-                    yTel <= yTel + 1;
-                else 
-                    yTel <= 0;
+    if falling_edge(klok9600) then
+        if input = '0' or bitteller < 8 then                
+            
+            if not(bitteller < 8) then
+                bitteller <= "0000";
+                byteteller <= byteteller + 1;
+                if not(byteteller < 8) then
+                    byteteller <= "0000";
                 end if;
-            end if;
-        end if;
-    end if;
-end process Y_teller;
-
-HORsync: process(xTel)
-begin
-    if xTel > 655 and xTel < 752 then           --Horizontale puls 96 lijnen breed
-        H_sync <= '0';
-    elsif xTel < 640 then
-        H_sync <= '1';
-    else
-        H_sync <= '1';
-    end if;
-end process HORsync;
-
-VERTsync: process(yTel)
-begin
-    if yTel > 489 and yTel < 492 then           --Verticale puls 2 lijnen breed
-        V_sync <= '0';
-    elsif yTel < 480 then
-        V_sync <= '1';
-    else
-        V_sync <= '1';
-    end if;
-end process VERTsync;
-
-video_ON_sync: process(xTel, yTel)
-begin
-    if xTel < 640 and yTel < 480 then
-        vid_ON <= '1';
-    else
-        vid_ON <= '0';
-    end if;
-end process video_ON_sync;
-
-RGBsync: process(clk, enable, Red, Green, Blue, vid_ON)
-begin
-    if rising_edge(clk) then
-        if enable = '1' then
-            if vid_ON = '1' then
-                vgaRed <= Red;
-                vgaGreen <= Green;
-                vgaBlue <= Blue;
             else
-                vgaRed <= "0000";
-                vgaGreen <= "0000";
-                vgaBlue <= "0000";
+                bitteller <= bitteller + 1;
             end if;
+            
+            if not(bitteller = 8) then
+                case casenumber is
+                    when "0000" =>
+                        case byteteller is
+                            when "0000" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0001" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0010" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0011" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0100" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0101" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0110" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0111" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "1000"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;
+                    when "0001" =>
+                        case byteteller is
+                            when "0001" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0010" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0011" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0100" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0101" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0110" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0111" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "1000" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0000" => amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                    
+                    when "0010" =>
+                        case byteteller is
+                            when "0010" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0011" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0100" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0101" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0110" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0111" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "1000" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0000" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0001"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                    
+                    when "0011" =>
+                        case byteteller is
+                            when "0011" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0100" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0101" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0110" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0111" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "1000" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0000" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0001" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0010"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                    
+                    when "0100" =>
+                        case byteteller is
+                            when "0100" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0101" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0110" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0111" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "1000" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0000" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0001" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0010" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0011"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                    
+                    when "0101" =>
+                         case byteteller is
+                            when "0101" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0110" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0111" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "1000" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0000" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0001" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0010" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0011" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0100"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                   
+                    when "0110" =>
+                         case byteteller is
+                            when "0110" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0111" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "1000" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0000" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0001" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0010" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0011" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0100" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0101"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                   
+                    when "0111" =>
+                        case byteteller is
+                            when "0111" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "1000" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0000" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0001" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0010" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0011" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0100" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0101" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0110"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;
+                     when "1000" =>
+                        case byteteller is
+                            when "1000" => startbyte_arc(7 downto 0) <= startbyte_arc(6 downto 0) & input;
+                            when "0000" => amp1_arc(7 downto 0) <= amp1_arc(6 downto 0) & input;
+                            when "0001" => amp2_arc(7 downto 0) <= amp2_arc(6 downto 0) & input;
+                            when "0010" => amp3_arc(7 downto 0) <= amp3_arc(6 downto 0) & input;
+                            when "0011" => amp4_arc(7 downto 0) <= amp4_arc(6 downto 0) & input;
+                            when "0100" => amp5_arc(7 downto 0) <= amp5_arc(6 downto 0) & input;
+                            when "0101" => amp6_arc(7 downto 0) <= amp6_arc(6 downto 0) & input;
+                            when "0110" => amp7_arc(7 downto 0) <= amp7_arc(6 downto 0) & input;
+                            when "0111"=> amp8_arc(7 downto 0) <= amp8_arc(6 downto 0) & input;                                                             
+                            when others  => null;
+                        end case;                     
+                      when others  => null;                    
+                end case;
+            end if;
+            
+        end if;
+        if bitteller = 8 and byteteller = 0 and input = '0' then
+        if not (startbyte_arc = "11111111") then
+            if casenumber = 9 then
+                casenumber <= "0000";
+            else
+                casenumber <= casenumber + 1;
+            end if;
+        else
+            
+        end if;
         end if;
     end if;
-end process RGBsync;
-
-Hsync <= H_sync;
-Vsync <= V_sync;
-video_ON <= vid_ON;
-
+end process;          
 end Behavioral;
-
