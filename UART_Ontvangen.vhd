@@ -28,7 +28,6 @@ entity andpoort2 is
           klok : in STD_LOGIC;
           input : in STD_LOGIC;
           
-          startbyte : out std_logic_vector(7 downto 0);
           amp1 : out std_logic_vector(7 downto 0);
           amp2 : out std_logic_vector(7 downto 0);
           amp3 : out std_logic_vector(7 downto 0);
