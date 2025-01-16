@@ -186,12 +186,12 @@ begin
     if rising_edge(clk) then
         if enable = '1' then
             if vid_ON = '1' then
-                tempRed := "0000";                          --achtergrond kleur = Zwart
+                tempRed := "0000";                              --achtergrond kleur = Zwart
                 tempGreen := "0000";
                 tempBlue := "0000";
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
                     if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
-                        if unsigned(f(i)) >= yTel - 95 then
+                        if (255 - unsigned(f(i))) >= yTel - 95 then
                             tempRed := "0000";
                             tempGreen := "1111";
                             tempBlue := "0000";

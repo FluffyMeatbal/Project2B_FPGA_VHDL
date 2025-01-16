@@ -217,15 +217,22 @@ begin
             
         end if;
         if bitteller = 8 and byteteller = 0 and input = '0' then
-        if not (startbyte_arc = "11111111") then
-            if casenumber = 9 then
-                casenumber <= "0000";
+            if not (startbyte_arc = "11111111") then
+                if casenumber = 9 then
+                    casenumber <= "0000";
+                else
+                    casenumber <= casenumber + 1;
+                end if;
             else
-                casenumber <= casenumber + 1;
+                amp1 <= std_logic_vector(amp1_arc);
+                amp2 <= std_logic_vector(amp2_arc);
+                amp3 <= std_logic_vector(amp3_arc);
+                amp4 <= std_logic_vector(amp4_arc);
+                amp5 <= std_logic_vector(amp5_arc);
+                amp6 <= std_logic_vector(amp6_arc);
+                amp7 <= std_logic_vector(amp7_arc);
+                amp8 <= std_logic_vector(amp8_arc);
             end if;
-        else
-            
-        end if;
         end if;
     end if;
 end process;          

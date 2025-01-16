@@ -123,8 +123,8 @@ set_property PACKAGE_PIN U16 [get_ports {video_ON}]
 
 ##Pmod Header JA
 ##Sch name = JA1
-set_property PACKAGE_PIN J1 [get_ports {UART_IN]
-	set_property IOSTANDARD LVCMOS33 [get_ports {UART_IN]
+set_property PACKAGE_PIN J1 [get_ports {UART_IN}]
+	set_property IOSTANDARD LVCMOS33 [get_ports {UART_IN}]
 ##Sch name = JA2
 #set_property PACKAGE_PIN L2 [get_ports {JA[1]}]
 	#set_property IOSTANDARD LVCMOS33 [get_ports {JA[1]}]

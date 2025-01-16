@@ -21,88 +21,105 @@
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
+use work.VGA_Types.all;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+use IEEE.NUMERIC_STD.ALL;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx leaf cells in this code.
 --library UNISIM;
 --use UNISIM.VComponents.all;
 
-entity VGA_aansturing_tb is
+entity VU_Meter_met_UART_tb is
 --  Port ( );
-end VGA_aansturing_tb;
+end VU_Meter_met_UART_tb;
 
-architecture Behavioral of VGA_aansturing_tb is
+architecture Behavioral of VU_Meter_met_UART_tb is
 
-    component VGA_aansturing is
+    component VU_Meter_met_UART is
     Port (
-        clk: in std_logic;
-        Red, Green, Blue: in std_logic_vector(3 downto 0);
+        clk, UART_IN: in std_logic;
         Hsync, Vsync, video_ON: out std_logic;
         vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
     );
     end component;
 
-    signal clk: std_logic;
-    signal Red, Green, Blue: std_logic_vector(3 downto 0);
+    signal clk, UART_IN: std_logic;
+    signal f: FreqArray;
     signal Hsync, Vsync, video_ON: std_logic;
     signal vgaRed, vgaGreen, vgaBlue: std_logic_vector(3 downto 0);
     
-    signal verify : boolean:= true; 
+    type IntArray is array(8 downto 0) of integer range 0 to 255;
+    signal TestByte: IntArray;
+    constant TijdPerBit : time:= 104 us;                -- Wachttijd per bit bij een baudrate van 9600
+    
+--    signal verify : boolean:= true; 
 
 begin
+
+uut: VU_Meter_met_UART port map(
+    clk => clk,
+    UART_IN => UART_IN,
+    Hsync => Hsync,
+    Vsync => Vsync,
+    video_ON => video_ON,
+    vgaRed => vgaRed,
+    vgaGreen => vgaGreen,
+    vgaBlue => vgaBlue
+);
 
 clk_gen: process
 begin
     clk <= '0';
-    wait for 1 ns;
+    wait for 5 ns;
     clk <= '1';
-    wait for 1 ns;
+    wait for 5 ns;
 end process;
 
 tb: process
 begin
-    Red <= "0000"; Green <= "0000"; Blue <= "0000";    --Zwart
-    wait for 1 ms;
-
-    Red <= "1111"; Green <= "0000"; Blue <= "0000";    --Rood
-    wait for 1 ms;
+    TestByte(0) <= 255;     -- Startbyte
+    TestByte(1) <= 64;      -- Byte 1
+    TestByte(2) <= 128;     -- Byte 2
+    TestByte(3) <= 255;     -- Byte 3
+    TestByte(4) <= 128;     -- Byte 4
+    TestByte(5) <= 64;      -- Byte 5
+    TestByte(6) <= 32;      -- Byte 6
+    TestByte(7) <= 16;      -- Byte 7
+    TestByte(8) <= 8;       -- Byte 8
     
-    Red <= "1111"; Green <= "1111"; Blue <= "0000";    --Geel
-    wait for 1 ms;
-
-    Red <= "0000"; Green <= "1111"; Blue <= "0000";    --Groen
-    wait for 1 ms;
+    UART_IN <= '1';
+    wait for TijdPerBit;
     
-    Red <= "0000"; Green <= "1111"; Blue <= "1111";    --Cyaan
-    wait for 1 ms; 
+    for i in 0 to 8 loop                                -- index voor TestByte
+    UART_IN <= '0';
+    wait for TijdPerBit;
     
-    Red <= "0000"; Green <= "0000"; Blue <= "1111";    --Blauw
-    wait for 1 ms;
-    
-    Red <= "1111"; Green <= "0000"; Blue <= "1111";    --Magenta
-    wait for 1 ms;
-    
-    Red <= "1111"; Green <= "1111"; Blue <= "1111";    --Wit
-    wait for 1 ms;
+        for j in 7 downto 0 loop                        -- index voor bit van TestByte
+            UART_IN <= to_unsigned(TestByte(i),8)(j);   -- conversie integer i naar unsigned
+            wait for TijdPerBit;                        -- bit j wordt toegewezen aan UART_IN
+        end loop;
+        
+    UART_IN <= '1';
+    wait for TijdPerBit;
+    end loop;
     
     wait;                                               --Einde van de simulatie
 end process;
 
-validation: process
-begin
-wait until rising_edge(clk);
-if video_ON = '1' then
-    verify <= true when 
-        (vgaRed = Red) 
-        and (vgaGreen = Green) 
-        and (vgaBlue = Blue) 
-    else false;
-end if;
+--validation: process
+--begin
+--wait until rising_edge(clk);
+--if video_ON = '1' then
+--    verify <= true when 
+--        (vgaRed = Red) 
+--        and (vgaGreen = Green) 
+--        and (vgaBlue = Blue) 
+--    else false;
+--end if;
 
-end process;
+--end process;
 
 end Behavioral;
