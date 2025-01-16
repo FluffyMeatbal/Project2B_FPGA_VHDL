@@ -78,6 +78,7 @@ constant BlokGrens: BlokArray := (                          --Array met randwaar
 (L => 640/8*7+1, R => 640)                                  --Blok 8
 );
 constant BlockBottom:   integer := 350;                     --onderkant blokjes
+constant BovenGrens:    integer := 95;                      --bovenkant blokjes
 
 begin
 
@@ -190,8 +191,8 @@ begin
                 tempGreen := "0000";
                 tempBlue := "0000";
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
-                    if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
-                        if (255 - unsigned(f(i))) >= yTel - 95 then
+                    if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel >= BovenGrens and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
+                        if (255-unsigned(f(i))) <= yTel - BovenGrens then
                             tempRed := "0000";
                             tempGreen := "1111";
                             tempBlue := "0000";
