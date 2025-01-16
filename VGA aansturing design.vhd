@@ -193,9 +193,9 @@ begin
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
                     if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel >= BovenGrens and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
                         if (255-unsigned(f(i))) <= yTel - BovenGrens then
-                            tempRed := "0000";
-                            tempGreen := "1111";
-                            tempBlue := "0000";
+                            tempRed     := "0000";
+                            tempGreen   := "1111";
+                            tempBlue    := "0000";
                         end if;
                     end if;
                 end loop;
@@ -206,7 +206,29 @@ begin
         end if;
     end if;
 end process RegDecoder;
+end Behavioral;
 
+library IEEE;
+use IEEE.STD_LOGIC_1164.ALL;
+use IEEE.Numeric_STD.ALL;
+use work.VGA_Types.all;
+
+entity AmplitudeSync is
+    port(
+            clk: in std_logic;
+            amp: in FreqArray;
+            SyncAmp: out FreqArray
+         );
+end AmplitudeSync;
+         
+architecture Behavioral of AmplitudeSync is 
+begin
+AmpSync: process(clk, amp)
+begin
+if rising_edge(clk) then
+    SyncAmp <= amp;
+end if;
+end process AmpSync;
 end Behavioral;
 
 library IEEE;
@@ -229,30 +251,18 @@ signal Klok60Hz : std_logic;
 begin
 UART : entity work.andpoort2
     Port map( 
-            klok => clk,
-            input => UART_IN,
-            amp1 => amp(1),
-            amp2 => amp(2),
-            amp3 => amp(3), 
-            amp4 => amp(4), 
-            amp5 => amp(5),
-            amp6 => amp(6), 
-            amp7 => amp(7), 
-            amp8 => amp(8) 
-         );
-
-VGA : entity work.VGA_aansturing
-    Port map(
-            f => SyncAmp,
-            clk => clk,
-            Hsync => Hsync,
-            Vsync => Vsync,
-            video_ON => video_ON,
-            vgaRed => vgaRed,
-            vgaGreen => vgaGreen,
-            vgaBlue => vgaBlue
-    );
-    
+                klok => clk,
+                input => UART_IN,
+                amp1 => amp(1),
+                amp2 => amp(2),
+                amp3 => amp(3), 
+                amp4 => amp(4), 
+                amp5 => amp(5),
+                amp6 => amp(6), 
+                amp7 => amp(7), 
+                amp8 => amp(8) 
+                );
+         
 KlokDeler60Hz : entity work.KlokDeler
     generic map(
                 Prescaler => 1666667
@@ -261,12 +271,24 @@ KlokDeler60Hz : entity work.KlokDeler
                 clk => clk,
                 DeelClk => Klok60Hz
                 );
+                
+AmplitudeSync : entity work.AmplitudeSync
+    port map    (
+                clk => Klok60Hz,
+                amp => amp,
+                SyncAmp => SyncAmp
+                );
 
-AmpSync: process(Klok60Hz)
-begin
-if rising_edge(Klok60Hz) then
-    SyncAmp <= amp;
-end if;
-end process AmpSync;
+VGA : entity work.VGA_aansturing
+    Port map    (
+                f => SyncAmp,
+                clk => clk,
+                Hsync => Hsync,
+                Vsync => Vsync,
+                video_ON => video_ON,
+                vgaRed => vgaRed,
+                vgaGreen => vgaGreen,
+                vgaBlue => vgaBlue
+                );
 
 end architecture;

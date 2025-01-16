@@ -268,6 +268,5 @@ end process;
     amp5 <= std_logic_vector(amp5_arc_utz);
     amp6 <= std_logic_vector(amp6_arc_utz);
     amp7 <= std_logic_vector(amp7_arc_utz);
-    amp8 <= std_logic_vector(amp8_arc_utz);
-end process;       
+    amp8 <= std_logic_vector(amp8_arc_utz);      
 end Behavioral;
