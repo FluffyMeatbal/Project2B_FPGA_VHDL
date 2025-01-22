@@ -247,7 +247,7 @@ end VU_Meter_met_UART;
 architecture structural of VU_Meter_met_UART is
 signal amp: FreqArray;
 signal SyncAmp: FreqArray;
-signal Klok60Hz : std_logic;
+signal Klok25MHz : std_logic;
 begin
 UART : entity work.andpoort2
     Port map( 
@@ -265,16 +265,16 @@ UART : entity work.andpoort2
          
 KlokDeler60Hz : entity work.KlokDeler
     generic map(
-                Prescaler => 1666667
+                Prescaler => 4
                 )
     port map    (
                 clk => clk,
-                DeelClk => Klok60Hz
+                DeelClk => Klok25MHz
                 );
                 
 AmplitudeSync : entity work.AmplitudeSync
     port map    (
-                clk => Klok60Hz,
+                clk => Klok25MHz,
                 amp => amp,
                 SyncAmp => SyncAmp
                 );
