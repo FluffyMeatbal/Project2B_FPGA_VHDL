@@ -216,6 +216,7 @@ use work.VGA_Types.all;
 entity AmplitudeSync is
     port(
             clk: in std_logic;
+            enable: in std_logic;
             amp: in FreqArray;
             SyncAmp: out FreqArray
          );
@@ -226,7 +227,9 @@ begin
 AmpSync: process(clk, amp)
 begin
 if rising_edge(clk) then
-    SyncAmp <= amp;
+    if enable = '1' then
+        SyncAmp <= amp;
+    end if;
 end if;
 end process AmpSync;
 end Behavioral;
@@ -247,6 +250,7 @@ end VU_Meter_met_UART;
 architecture structural of VU_Meter_met_UART is
 signal amp: FreqArray;
 signal SyncAmp: FreqArray;
+signal Klok60Hz : std_logic;
 signal Klok25MHz : std_logic;
 begin
 UART : entity work.andpoort2
@@ -265,6 +269,15 @@ UART : entity work.andpoort2
          
 KlokDeler60Hz : entity work.KlokDeler
     generic map(
+                Prescaler => 1666667
+                )
+    port map    (
+                clk => clk,
+                DeelClk => Klok60Hz
+                );
+                
+KlokDeler25MHz : entity work.KlokDeler
+    generic map(
                 Prescaler => 4
                 )
     port map    (
@@ -274,7 +287,8 @@ KlokDeler60Hz : entity work.KlokDeler
                 
 AmplitudeSync : entity work.AmplitudeSync
     port map    (
-                clk => Klok25MHz,
+                clk => Klok60Hz,
+                enable => Klok25MHz,
                 amp => amp,
                 SyncAmp => SyncAmp
                 );

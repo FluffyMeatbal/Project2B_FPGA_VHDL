@@ -238,7 +238,7 @@ begin
                 
             end if;
         end if;
-        if input = '1' and startbyte_arc = "11111111"then
+        if startbyte_arc = "11111111"then
                startbyte_arc_utz <= startbyte_arc;
                amp1_arc_utz <= amp1_arc;
                amp2_arc_utz <= amp2_arc;
