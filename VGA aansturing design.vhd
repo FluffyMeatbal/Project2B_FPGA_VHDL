@@ -11,18 +11,12 @@
 -- Description: 
 -- 
 -- Dependencies: 
--- 
+-- UART_Ontvangen.vhd
+-- KlokDeler.vhd
 -- Revision:
 -- Revision 0.01 - File Created
 -- Additional Comments:
 -- 
--- Eisen:
--- Lijnkleur is rood
--- Achtergrond is geel
--- Breedte van de lijn is 4 pixels
--- De afstand tussen de lijnen is 16 pixels
--- Horizontale lijnen
--- Er worden 3 lijnen afgebeeld
 ----------------------------------------------------------------------------------
 
 
@@ -33,6 +27,10 @@ package VGA_Types is                                    --array voor input regis
     type FreqArray is array(8 downto 1) of std_logic_vector(7 downto 0);
 end package VGA_Types;
 
+-------------------------------------------------------------------------------------------
+--In deze module wordt de navolging van het VGA protocol geregeld en de data wordt verwerkt in beeld
+-------------------------------------------------------------------------------------------
+
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.Numeric_STD.ALL;
@@ -40,8 +38,8 @@ use work.VGA_Types.all;
 
 entity VGA_aansturing is
 Port (
-clk: in std_logic;
-f: in FreqArray;
+clk: in std_logic;                                      --100MHz
+f: in FreqArray;                                        --komt binnen via UART
 Hsync, Vsync, video_ON: out std_logic;
 vgaRed, vgaGreen, vgaBlue: out std_logic_vector(3 downto 0)
 );
@@ -120,7 +118,7 @@ begin
         if enable = '1' then
             if xTel = 799 then                              --xTel is aan het eind
                 if yTel < 524 then
-                    yTel <= yTel + 1;
+                    yTel <= yTel + 1;                       --verhoog yTel
                 else 
                     yTel <= 0;
                 end if;
@@ -153,16 +151,16 @@ end process VERTsync;
 
 video_ON_sync: process(xTel, yTel)
 begin
-    if xTel < 640 and yTel < 480 then
-        vid_ON <= '1';
+    if xTel < 640 and yTel < 480 then                       --actief gebied bij een resolutie van 480p
+        vid_ON <= '1';                                      --uitgang om het actieve video gebied aan te geven
     else
         vid_ON <= '0';
     end if;
 end process video_ON_sync;
 
 RGBsync: process(clk, enable, Red, Green, Blue, vid_ON)
-begin
-    if rising_edge(clk) then
+begin                                                       --proces om te zorgen dat het onmogelijk is om 
+    if rising_edge(clk) then                                --dingen te sturen op de RGB uitgangne
         if enable = '1' then
             if vid_ON = '1' then
                 vgaRed <= Red;
@@ -182,7 +180,7 @@ Vsync <= V_sync;
 video_ON <= vid_ON;
 
 RegDecoder: process(clk, enable, xTel, yTel,f)
-variable tempRed, tempGreen, tempBlue: std_logic_vector(3 downto 0) := (others => '0');
+variable tempRed, tempGreen, tempBlue: std_logic_vector(3 downto 0) := (others => '0'); -- tijdelijke variabelen om problemen met overschrijven te voorkomen
 begin
     if rising_edge(clk) then
         if enable = '1' then
@@ -192,9 +190,9 @@ begin
                 tempBlue := "0000";
                 for i in 8 downto 1 loop                        --doorloop routine voor elke frequentie
                     if xTel >= BlokGrens(i).L and xTel < BlokGrens(i).R and yTel >= BovenGrens and yTel <= BlockBottom then  --als de x teller zich in het blokje bevind ga verder met de routine
-                        if (255-unsigned(f(i))) <= yTel - BovenGrens then
-                            tempRed     := "0000";
-                            tempGreen   := "1111";
+                        if (255-unsigned(f(i))) <= yTel - BovenGrens then   -- de waarde in f wordt omgedraaid en vergeleken met yTel
+                            tempRed     := "0000";                          -- als het niet omgedraaid wordt beginnen de balkjes bovenaan het scherm
+                            tempGreen   := "1111";              -- kleur = groen
                             tempBlue    := "0000";
                         end if;
                     end if;
@@ -207,6 +205,19 @@ begin
     end if;
 end process RegDecoder;
 end Behavioral;
+
+-------------------------------------------------------------------------------------------
+--In deze module wordt de data van de UART gesynchroniseerd met de refreshrate van het VGA-scherm
+--
+--extra comments:
+--om een 60Hz klok te maken moet de prescaler afgerond worden (100.000.000 / 60 = 1666666,666...)
+--dit zorgt ervoor dat het overschrijven meestal op het goede moment gebeurt maar, uiteindelijk
+--wordt de afwijking te groot en gaat het scherm flikkeren doordat de waarden veranderen halverwege
+--een frame. Daarom heb ik een 25Mhz enable toegevoegd. De VGA processen werken ook op een 25MHz klok.
+--in een ideale wereld zou de data overgeschreven worden wanneer 480<yTel<524. Omdat ik hier achteraf
+--achter kwam was het lastig om dit zo te laten werken. Gelukkig werkt het met mijn niet perfecte
+--oplossing ook. Er is nu geen flikkering op het scherm te zien. 
+-------------------------------------------------------------------------------------------
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -247,13 +258,21 @@ entity VU_Meter_met_UART is
          );
 end VU_Meter_met_UART;
 
+-------------------------------------------------------------------------------------------
+--Met de volgende structuur beschrijving worden alle modules samengevoegd
+--
+--Dependencies:
+--UART_Ontvangen.vhd
+--KlokDeler.vhd
+-------------------------------------------------------------------------------------------
+
 architecture structural of VU_Meter_met_UART is
-signal amp: FreqArray;
-signal SyncAmp: FreqArray;
-signal Klok60Hz : std_logic;
-signal Klok25MHz : std_logic;
+signal amp: FreqArray;                                          --signaal voor amplitudes
+signal SyncAmp: FreqArray;                                      --gesynchroniseerd signaal voor amplitudes
+signal Klok60Hz : std_logic;                                    --klok voor framerate
+signal Klok25MHz : std_logic;                                   --klok voor synchronisatie met VGA processen
 begin
-UART : entity work.andpoort2
+UART : entity work.UART_IN
     Port map( 
                 klok => clk,
                 input => UART_IN,

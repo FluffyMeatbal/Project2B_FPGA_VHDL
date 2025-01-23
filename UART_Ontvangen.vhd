@@ -230,24 +230,13 @@ begin
         end if;
     end if;
 end process;
-        
-    if startbyte = "11111111" then -- als het bericht goed is uitgelezen
-        amp1 <= std_logic_vector(amp1_arc);  --zend de goede waardes uit
-        amp2 <= std_logic_vector(amp2_arc);
-        amp3 <= std_logic_vector(amp3_arc);
-        amp4 <= std_logic_vector(amp4_arc);
-        amp5 <= std_logic_vector(amp5_arc);
-        amp6 <= std_logic_vector(amp6_arc);
-        amp7 <= std_logic_vector(amp7_arc);
-        amp8 <= std_logic_vector(amp8_arc);
-    else  --zend niks uit 
-        amp1 <= (others => '0');
-        amp2 <= (others => '0');
-        amp3 <= (others => '0');
-        amp4 <= (others => '0');
-        amp5 <= (others => '0');
-        amp6 <= (others => '0');
-        amp7 <= (others => '0');
-        amp8 <= (others => '0');
-        
+ 
+    amp1 <= std_logic_vector(amp1_arc);  --zend de goede waardes uit
+    amp2 <= std_logic_vector(amp2_arc);
+    amp3 <= std_logic_vector(amp3_arc);
+    amp4 <= std_logic_vector(amp4_arc);
+    amp5 <= std_logic_vector(amp5_arc);
+    amp6 <= std_logic_vector(amp6_arc);
+    amp7 <= std_logic_vector(amp7_arc);
+    amp8 <= std_logic_vector(amp8_arc);  
 end Behavioral;

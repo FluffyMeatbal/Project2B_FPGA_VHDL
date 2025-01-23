@@ -9,7 +9,7 @@
 -- Target Devices: 
 -- Tool Versions: 
 -- Description: 
--- 
+-- Dit is een module die de binnenkomende klok deelt aan de hand van een prescaler die aangepast kan worden met generic map
 -- Dependencies: 
 -- 
 -- Revision:
@@ -33,7 +33,7 @@ use IEEE.NUMERIC_STD.ALL;
 
 entity KlokDeler is
     generic(
-            PreScaler : integer := 1
+            PreScaler : integer := 1                            --standaard prescaler is 1 (ingang = uitgang)
             );
             
     port    (
