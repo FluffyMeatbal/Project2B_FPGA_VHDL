@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------------------
--- Company: 
+-- Company: Hogeschool Utrecht
 -- Engineer: Gijs De Vries
 -- 
 -- Create Date: 15.01.2025 13:01:42
@@ -18,13 +18,16 @@
 -- 
 ----------------------------------------------------------------------------------
 
+-- Dit programma haalt 9 bytes binnen op een baudrate van 9600
+-- Als het hele bericht is binnengehaald worden er waardes uitgezonden
+
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.Numeric_std.all;
 
-entity andpoort2 is
-    Port ( klok, input : in STD_LOGIC;
+entity UART_IN is
+    Port ( klok, input : in STD_LOGIC; -- input is de seriele rx pin
            amp1 : out std_logic_vector(7 downto 0);
            amp2 : out std_logic_vector(7 downto 0);
            amp3 : out std_logic_vector(7 downto 0);
@@ -34,21 +37,18 @@ entity andpoort2 is
            amp7 : out std_logic_vector(7 downto 0);
            amp8 : out std_logic_vector(7 downto 0)
          );
-end andpoort2;
+end UART_IN;
 
-architecture Behavioral of andpoort2 is
+architecture Behavioral of UART_IN is
 
-    signal klok19200 : std_logic := '0';
-    signal teller: Unsigned(3 downto 0) := (others => '0');
-    signal teller2: Unsigned(3 downto 0) := (others => '0');
+    signal klok9600 : std_logic := '0'; --de klok die is afgesteld op de baudrate
+    signal bitteller: Unsigned(3 downto 0) := (others => '0'); --deze telt tot het aantal bits wat verzonden wordt
+    signal byteteller: Unsigned(3 downto 0) := (others => '0'); --deze telt tot het aantal bytes wat verzonden wordt
     
-    signal testbyte_arc : Unsigned(7 downto 0) := (others => '0');
-    signal testbyte2_arc : Unsigned(7 downto 0) := (others => '0');
+    constant klokdeler9600 : integer := 10416; --constante om de klok op de baudrate te krijgen
+    signal klokteller9600 : integer := 0; --zorgt voor de vertraging van de klok
     
-    constant klokdeler1 : integer := 10416;
-    signal klokteller1 : integer := 0;
-    
-    signal startbyte_arc : unsigned(7 downto 0) := (others => '0');
+    signal startbyte_arc : unsigned(7 downto 0) := (others => '0'); --hier worden alle bytes in opgeslagen
     signal amp1_arc : unsigned(7 downto 0) := (others => '0');
     signal amp2_arc : unsigned(7 downto 0) := (others => '0');
     signal amp3_arc : unsigned(7 downto 0) := (others => '0');
@@ -58,56 +58,46 @@ architecture Behavioral of andpoort2 is
     signal amp7_arc : unsigned(7 downto 0) := (others => '0');
     signal amp8_arc : unsigned(7 downto 0) := (others => '0');
     
-    signal startbyte_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp1_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp2_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp3_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp4_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp5_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp6_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp7_arc_utz : unsigned(7 downto 0) := (others => '0');
-    signal amp8_arc_utz : unsigned(7 downto 0) := (others => '0');
-    
-    signal casenumber : unsigned(3 downto 0) := (others => '0');       
+    signal casenumber : unsigned(3 downto 0) := (others => '0'); --zorgt ervoor dat elke byte op de goede plek komt       
     
 begin
 
-process_klokdeler1 : process(klok)
+process_klokdeler1 : process(klok) --in dit proces wordt de klokdeling gedaan
 begin
     if rising_edge(klok) then
-        if klokteller1 = klokdeler1 / 2 then
-            klokteller1 <= klokteller1 + 1; klok19200 <= '1';
+        if klokteller9600 = klokdeler9600 / 2 then
+            klokteller9600 <= klokteller9600 + 1; klok9600 <= '1';
         else
-            if klokteller1 = klokdeler1 then
-                klok19200 <= '0'; klokteller1 <= 0;
+            if klokteller9600 = klokdeler9600 then
+                klok9600 <= '0'; klokteller9600 <= 0;
             else
-                klokteller1 <= klokteller1 + 1;
+                klokteller9600 <= klokteller9600 + 1;
             end if; 
         end if;
     end if;
 end process;
  
-tellen : process(klok19200)
+tellen : process(klok9600)
 begin
-    if falling_edge(klok19200) then
-        if input = '0' or teller < 8 then                
+    if falling_edge(klok9600) then  --dit hele proces werkt op de klok die is afgesteld op de baudrate
+        if input = '0' or bitteller < 8 then --startbit gedetecteerd, bit teller niet aan het tellen                 
             
-            if not(teller < 8) then
-                teller <= "0000";
-                teller2 <= teller2 + 1;
-                if not(teller2 < 8) then
-                    teller2 <= "0000";
+            if not(bitteller < 8) then --als de bitteller 8 is reset hem
+                bitteller <= "0000";
+                byteteller <= byteteller + 1; --bit is uitgelezen, dus naar volgende byte
+                if not(byteteller < 8) then --alle bytes uitgelezen
+                    byteteller <= "0000"; --reset de teller
                 end if;
-            else
-                teller <= teller + 1;
+            else --als bitteller niet 8 is
+                bitteller <= bitteller + 1;
             end if;
             
-            if not(teller = 8) then
-                case casenumber is
+            if not(bitteller = 8) then --als bitteller niet 8 is
+                case casenumber is --deze case zorgt ervoor dat de startbyte op de juiste plek komt
                     when "0000" =>
-                        case teller2 is
-                            when "0000" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
-                            when "0001" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
+                        case byteteller is
+                            when "0000" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1); --zet de input (de rx) in de juiste byte
+                            when "0001" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1); --schuifregister
                             when "0010" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
                             when "0011" => amp3_arc(7 downto 0) <= input & amp3_arc(7 downto 1);
                             when "0100" => amp4_arc(7 downto 0) <= input & amp4_arc(7 downto 1);
@@ -118,7 +108,7 @@ begin
                             when others  => null;
                         end case;
                     when "0001" =>
-                        case teller2 is
+                        case byteteller is
                             when "0001" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0010" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0011" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -131,7 +121,7 @@ begin
                             when others  => null;
                         end case;                    
                     when "0010" =>
-                        case teller2 is
+                        case byteteller is
                             when "0010" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0011" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0100" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -144,7 +134,7 @@ begin
                             when others  => null;
                         end case;                    
                     when "0011" =>
-                        case teller2 is
+                        case byteteller is
                             when "0011" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0100" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0101" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -157,7 +147,7 @@ begin
                             when others  => null;
                         end case;                    
                     when "0100" =>
-                        case teller2 is
+                        case byteteller is
                             when "0100" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0101" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0110" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -170,7 +160,7 @@ begin
                             when others  => null;
                         end case;                    
                     when "0101" =>
-                         case teller2 is
+                         case byteteller is
                             when "0101" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0110" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0111" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -183,7 +173,7 @@ begin
                             when others  => null;
                         end case;                   
                     when "0110" =>
-                         case teller2 is
+                         case byteteller is
                             when "0110" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0111" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "1000" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -196,7 +186,7 @@ begin
                             when others  => null;
                         end case;                   
                     when "0111" =>
-                        case teller2 is
+                        case byteteller is
                             when "0111" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "1000" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0000" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -209,7 +199,7 @@ begin
                             when others  => null;
                         end case;
                      when "1000" =>
-                        case teller2 is
+                        case byteteller is
                             when "1000" => startbyte_arc(7 downto 0) <= input & startbyte_arc(7 downto 1);
                             when "0000" => amp1_arc(7 downto 0) <= input & amp1_arc(7 downto 1);
                             when "0001" => amp2_arc(7 downto 0) <= input & amp2_arc(7 downto 1);
@@ -227,7 +217,7 @@ begin
             
         end if;
         
-        if teller = 8 and teller2 = 0 and input = '0' then
+        if bitteller = 8 and byteteller = 0 and input = '0' then --zorgt ervoor dat de alle bytes op de juiste plek komen
             if not (startbyte_arc = "11111111") then
                 if casenumber = 9 then
                     casenumber <= "0000";
@@ -238,35 +228,26 @@ begin
                 
             end if;
         end if;
-        if startbyte_arc = "11111111"then
-               startbyte_arc_utz <= startbyte_arc;
-               amp1_arc_utz <= amp1_arc;
-               amp2_arc_utz <= amp2_arc;
-               amp3_arc_utz <= amp3_arc;
-               amp4_arc_utz <= amp4_arc;
-               amp5_arc_utz <= amp5_arc;
-               amp6_arc_utz <= amp6_arc;
-               amp7_arc_utz <= amp7_arc;
-               amp8_arc_utz <= amp8_arc; 
-             else 
-               startbyte_arc_utz <= (others => '0'); 
-               amp1_arc_utz <= (others => '0');
-               amp2_arc_utz <= (others => '0');
-               amp3_arc_utz <= (others => '0');
-               amp4_arc_utz <= (others => '0');
-               amp5_arc_utz <= (others => '0');
-               amp6_arc_utz <= (others => '0');
-               amp7_arc_utz <= (others => '0');
-               amp8_arc_utz <= (others => '0');
-        end if;
     end if;
 end process;
-    amp1 <= std_logic_vector(amp1_arc_utz);
-    amp2 <= std_logic_vector(amp2_arc_utz);
-    amp3 <= std_logic_vector(amp3_arc_utz);
-    amp4 <= std_logic_vector(amp4_arc_utz);
-    amp5 <= std_logic_vector(amp5_arc_utz);
-    amp6 <= std_logic_vector(amp6_arc_utz);
-    amp7 <= std_logic_vector(amp7_arc_utz);
-    amp8 <= std_logic_vector(amp8_arc_utz);      
+        
+    if startbyte = "11111111" then -- als het bericht goed is uitgelezen
+        amp1 <= std_logic_vector(amp1_arc);  --zend de goede waardes uit
+        amp2 <= std_logic_vector(amp2_arc);
+        amp3 <= std_logic_vector(amp3_arc);
+        amp4 <= std_logic_vector(amp4_arc);
+        amp5 <= std_logic_vector(amp5_arc);
+        amp6 <= std_logic_vector(amp6_arc);
+        amp7 <= std_logic_vector(amp7_arc);
+        amp8 <= std_logic_vector(amp8_arc);
+    else  --zend niks uit 
+        amp1 <= (others => '0');
+        amp2 <= (others => '0');
+        amp3 <= (others => '0');
+        amp4 <= (others => '0');
+        amp5 <= (others => '0');
+        amp6 <= (others => '0');
+        amp7 <= (others => '0');
+        amp8 <= (others => '0');
+        
 end Behavioral;
